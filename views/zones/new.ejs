@@ -1,0 +1,120 @@
+<%- include('../partials/header-standalone') %>
+
+<div class="mb-6">
+    <a href="/zones" class="text-blue-600 hover:text-blue-700 flex items-center mb-4">
+        <i class="fas fa-arrow-left mr-2"></i>
+        Back to Zones
+    </a>
+    <h3 class="text-2xl font-bold text-gray-800">Create New DNS Zone</h3>
+    <p class="text-gray-600 mt-1">Add a new zone to your DNS configuration</p>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %>
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        <%= decodeURIComponent(error) %>
+    </div>
+<% } %>
+
+<div class="content-card max-w-2xl">
+    <form method="POST" action="/zones" class="space-y-6">
+        <div class="form-group">
+            <label for="name" class="form-label">Zone Name *</label>
+            <input type="text" id="name" name="name" class="form-input" placeholder="dionipe.id" required>
+            <p class="form-help">Enter the domain name for this zone (e.g., dionipe.id, example.com)</p>
+        </div>
+
+        <div class="form-group">
+            <label for="type" class="form-label">Zone Type</label>
+            <select id="type" name="type" class="form-input">
+                <option value="master">Master (Primary)</option>
+                <option value="slave">Slave (Secondary)</option>
+                <option value="forward">Forward</option>
+            </select>
+            <p class="form-help">Select the type of DNS zone</p>
+        </div>
+
+        <div class="form-group">
+            <label for="nameserver" class="form-label">Name Server</label>
+            <input type="text" id="nameserver" name="nameserver" class="form-input" placeholder="satu.dionipe.id.">
+            <p class="form-help">Primary name server (leave empty for auto: ns1.yourzone.)</p>
+        </div>
+
+        <div class="form-group">
+            <label for="email" class="form-label">Admin Email</label>
+            <input type="text" id="email" name="email" class="form-input" placeholder="me.dionipe.id.">
+            <p class="form-help">Administrator email in DNS format (leave empty for auto: admin.yourzone.)</p>
+        </div>
+
+        <div class="form-group" id="domain-field" style="display: none;">
+            <label for="domain" class="form-label">Domain for PTR Records</label>
+            <input type="text" id="domain" name="domain" class="form-input" placeholder="dionipe.id">
+            <p class="form-help">Domain name for auto-generated PTR records (only for reverse zones)</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded p-4">
+            <h4 class="font-semibold text-blue-900 mb-2">
+                <i class="fas fa-info-circle mr-2"></i>
+                What happens next?
+            </h4>
+            <ul class="text-sm text-blue-800 space-y-1">
+                <li>• Zone file will be created in <code>/etc/bind/zones/</code></li>
+                <li>• Zone configuration will be added to <code>named.conf.local</code></li>
+                <li>• Bind DNS service will be reloaded</li>
+                <li>• Default SOA and NS records will be created</li>
+                <li id="ptr-info" style="display: none;">• 254 PTR records (1-254) will be auto-generated for reverse zone</li>
+            </ul>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save mr-2"></i>
+                Create Zone
+            </button>
+            <a href="/zones" class="btn">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Auto-populate nameserver and email based on zone name
+document.getElementById('name').addEventListener('input', function() {
+    const zoneName = this.value.trim();
+    if (!zoneName) return;
+    
+    const nsField = document.getElementById('nameserver');
+    const emailField = document.getElementById('email');
+    const domainField = document.getElementById('domain-field');
+    const domainInput = document.getElementById('domain');
+    const ptrInfo = document.getElementById('ptr-info');
+    
+    // Check if this is a reverse zone
+    const isReverseZone = zoneName.includes('in-addr.arpa');
+    
+    if (isReverseZone) {
+        // Show domain field for reverse zones
+        domainField.style.display = 'block';
+        ptrInfo.style.display = 'list-item';
+        
+        if (!domainInput.value) {
+            domainInput.placeholder = 'example.com';
+        }
+    } else {
+        // Hide domain field for forward zones
+        domainField.style.display = 'none';
+        ptrInfo.style.display = 'none';
+    }
+    
+    if (!nsField.value) {
+        nsField.placeholder = `ns1.${zoneName}.`;
+    }
+    
+    if (!emailField.value) {
+        emailField.placeholder = `admin.${zoneName}.`;
+    }
+});
+</script>
+
+<%- include('../partials/footer-standalone') %>

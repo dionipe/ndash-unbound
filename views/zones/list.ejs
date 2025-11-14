@@ -1,0 +1,91 @@
+<%- include('../partials/header-standalone') %>
+
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h3 class="text-2xl font-bold text-gray-800">DNS Zones</h3>
+        <p class="text-gray-600 mt-1">Manage your DNS zones and configurations</p>
+    </div>
+    <a href="/zones/new/create" class="btn btn-primary">
+        <i class="fas fa-plus mr-2"></i>
+        Create New Zone
+    </a>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %>
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        <%= error %>
+    </div>
+<% } %>
+
+<% if (typeof success !== 'undefined' && success) { %>
+    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+        <%= success %>
+    </div>
+<% } %>
+
+<!-- Zones List -->
+<div class="content-card">
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Zone Name</th>
+                    <th>Type</th>
+                    <th>Records</th>
+                    <th>Status</th>
+                    <th>Last Modified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (zones.length === 0) { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-500">
+                            No zones found. Create your first zone to get started.
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <% zones.forEach(zone => { %>
+                        <tr>
+                            <td>
+                                <div class="flex items-center">
+                                    <i class="fas fa-globe text-blue-600 mr-2"></i>
+                                    <span class="font-semibold text-gray-900"><%= zone.name %></span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-info"><%= zone.type %></span>
+                            </td>
+                            <td>
+                                <span class="text-gray-700"><%= zone.records %> records</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-<%= zone.status === 'active' ? 'success' : 'warning' %>">
+                                    <i class="fas fa-circle text-xs mr-1"></i>
+                                    <%= zone.status %>
+                                </span>
+                            </td>
+                            <td class="text-gray-600">
+                                <%= moment(zone.lastModified).format('DD MMM YYYY, HH:mm') %>
+                            </td>
+                            <td>
+                                <div class="flex items-center space-x-2">
+                                    <a href="/zones/<%= zone.name %>" class="btn btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form method="POST" action="/zones/<%= zone.name %>/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete zone <%= zone.name %>?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('../partials/footer-standalone') %>

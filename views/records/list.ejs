@@ -1,0 +1,52 @@
+<%- include('../partials/header-standalone') %>
+
+<div class="mb-6">
+    <a href="/zones/<%= zone.id %>" class="text-blue-600 hover:text-blue-700 flex items-center mb-4">
+        <i class="fas fa-arrow-left mr-2"></i>
+        Back to <%= zone.name %>
+    </a>
+    <h3 class="text-2xl font-bold text-gray-800">DNS Records - <%= zone.name %></h3>
+    <p class="text-gray-600 mt-1">Manage DNS records for this zone</p>
+</div>
+
+<div class="content-card">
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>TTL</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% records.forEach(record => { %>
+                    <tr>
+                        <td class="font-semibold text-gray-900"><%= record.name %></td>
+                        <td>
+                            <span class="badge badge-info"><%= record.type %></span>
+                        </td>
+                        <td class="text-gray-700"><%= record.value %></td>
+                        <td class="text-gray-600"><%= record.ttl %></td>
+                        <td>
+                            <div class="flex items-center space-x-2">
+                                <button class="btn btn-sm" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form method="POST" action="/records/<%= record.id %>/delete" class="inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('../partials/footer-standalone') %>

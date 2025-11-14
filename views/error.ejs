@@ -1,0 +1,15 @@
+<%- include('partials/header-standalone') %>
+
+<div class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+        <i class="fas fa-exclamation-triangle text-6xl text-red-600 mb-4"></i>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2"><%= title || 'Error' %></h1>
+        <p class="text-gray-600 mb-6"><%= message || 'An error occurred' %></p>
+        <a href="/" class="btn btn-primary">
+            <i class="fas fa-home mr-2"></i>
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<%- include('partials/footer-standalone') %>

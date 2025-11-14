@@ -1,0 +1,20 @@
+[Unit]
+Description=NDash - Bind DNS Management Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ndash
+ExecStart=/usr/bin/node /opt/ndash/server.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=ndash
+
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target
