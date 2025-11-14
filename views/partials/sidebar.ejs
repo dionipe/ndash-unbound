@@ -33,10 +33,10 @@
             <span>Create Zone</span>
         </a>
         
-        <a href="#" class="nav-item">
-            <i class="fas fa-sync-alt"></i>
+        <button onclick="reloadBindFromSidebar()" class="nav-item w-full text-left">
+            <i class="fas fa-sync-alt" id="reload-icon-sidebar"></i>
             <span>Reload Bind</span>
-        </a>
+        </button>
         
         <a href="#" class="nav-item">
             <i class="fas fa-cog"></i>
@@ -74,3 +74,45 @@
         </div>
     </div>
 </aside>
+
+<script>
+function reloadBindFromSidebar() {
+    const icon = document.getElementById('reload-icon-sidebar');
+    icon.classList.add('fa-spin');
+    
+    fetch('/zones/reload', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        icon.classList.remove('fa-spin');
+        if (data.success) {
+            // Show success message
+            showNotification(data.message, 'success');
+        }
+    })
+    .catch(error => {
+        icon.classList.remove('fa-spin');
+        showNotification('Failed to reload Bind', 'error');
+    });
+}
+
+function showNotification(message, type) {
+    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+    notification.innerHTML = `<i class="fas ${icon} mr-2"></i>${message}`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.5s';
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+</script>
