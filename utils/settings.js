@@ -67,13 +67,31 @@ const DEFAULT_SETTINGS = {
             adguard: true,
             malware: true,
             easylist: false,
-            tracking: false
+            tracking: false,
+            geoghegan: false
         },
         autoUpdate: true,
         updateInterval: 24, // hours
         whitelist: []
     }
 };
+
+/**
+ * Deep merge two objects
+ */
+function deepMerge(target, source) {
+    const result = { ...target };
+    
+    for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+            result[key] = deepMerge(target[key] || {}, source[key]);
+        } else {
+            result[key] = source[key];
+        }
+    }
+    
+    return result;
+}
 
 /**
  * Load settings from file or return defaults
@@ -90,7 +108,7 @@ async function loadSettings() {
         }
         
         const settings = JSON.parse(fileContent);
-        return { ...DEFAULT_SETTINGS, ...settings };
+        return deepMerge(DEFAULT_SETTINGS, settings);
     } catch (error) {
         console.warn('Failed to load settings, using defaults:', error.message);
         return DEFAULT_SETTINGS;

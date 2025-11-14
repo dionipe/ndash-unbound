@@ -42,6 +42,12 @@ const BLOCKLIST_SOURCES = {
         url: 'https://easylist.to/easylist/easyprivacy.txt',
         description: 'Block tracking and analytics',
         enabled: false
+    },
+    geoghegan: {
+        name: 'Geoghegan StopForumSpam',
+        url: 'https://www.stopforumspam.com/downloads/toxic_domains_whole.txt',
+        description: 'Block toxic domains from StopForumSpam',
+        enabled: false
     }
 };
 
@@ -159,8 +165,12 @@ function parseAdBlockFormat(content) {
 async function updateBlocklists(sources = null) {
     await initialize();
     
+    // Load current settings to get enabled sources
+    const settingsUtil = require('./settings');
+    const settings = await settingsUtil.loadSettings();
+    
     const sourcesToUpdate = sources || Object.keys(BLOCKLIST_SOURCES).filter(
-        key => BLOCKLIST_SOURCES[key].enabled
+        key => settings.adblock && settings.adblock.sources && settings.adblock.sources[key]
     );
     
     const results = {
