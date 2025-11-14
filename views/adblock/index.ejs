@@ -1,0 +1,394 @@
+<%- include('../partials/header') %>
+
+<div class="mb-6">
+    <h3 class="text-2xl font-bold text-gray-800 mb-2">
+        <i class="fas fa-shield-alt text-blue-600 mr-2"></i>
+        DNS Adblock
+    </h3>
+    <p class="text-gray-600">Block advertisements, trackers, and malware domains at the DNS level</p>
+</div>
+
+<!-- Status Card -->
+<div class="card mb-6">
+    <div class="card-body">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-16 h-16 <%= stats.enabled ? 'bg-green-100' : 'bg-gray-100' %> rounded-full flex items-center justify-center mr-4">
+                    <i class="fas <%= stats.enabled ? 'fa-shield-alt text-green-600' : 'fa-shield text-gray-400' %> text-3xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800">
+                        Adblock Status: <span class="<%= stats.enabled ? 'text-green-600' : 'text-gray-500' %>">
+                            <%= stats.enabled ? 'Active' : 'Disabled' %>
+                        </span>
+                    </h4>
+                    <% if (stats.enabled) { %>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Blocking <strong><%= stats.blockedDomains.toLocaleString() %></strong> domains
+                            <% if (stats.whitelistedDomains > 0) { %>
+                                • <strong><%= stats.whitelistedDomains %></strong> whitelisted
+                            <% } %>
+                        </p>
+                        <% if (stats.lastUpdated) { %>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Last updated: <%= new Date(stats.lastUpdated).toLocaleString() %>
+                            </p>
+                        <% } %>
+                    <% } else { %>
+                        <p class="text-sm text-gray-600 mt-1">Enable adblock to start filtering ads and trackers</p>
+                    <% } %>
+                </div>
+            </div>
+            <div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="adblockToggle" class="sr-only peer" <%= stats.enabled ? 'checked' : '' %>>
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Blocklist Sources -->
+<div class="card mb-6">
+    <div class="card-header">
+        <div class="flex items-center justify-between">
+            <h3 class="card-title">
+                <i class="fas fa-list text-gray-600 mr-2"></i>
+                Blocklist Sources
+            </h3>
+            <button onclick="updateBlocklists()" class="btn-sm btn-primary" id="updateBtn">
+                <i class="fas fa-sync-alt mr-1"></i>
+                Update Lists
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="overflow-x-auto">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="w-12">Status</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th class="w-32">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% Object.keys(sources).forEach(key => { 
+                        const source = sources[key];
+                        const enabled = settings.sources && settings.sources[key];
+                    %>
+                        <tr>
+                            <td>
+                                <% if (enabled) { %>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i> Active
+                                    </span>
+                                <% } else { %>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                        <i class="fas fa-circle mr-1"></i> Inactive
+                                    </span>
+                                <% } %>
+                            </td>
+                            <td class="font-medium"><%= source.name %></td>
+                            <td class="text-sm text-gray-600"><%= source.description %></td>
+                            <td>
+                                <button 
+                                    onclick="toggleSource('<%= key %>')" 
+                                    class="btn-sm <%= enabled ? 'btn-danger' : 'btn-secondary' %>"
+                                    data-source="<%= key %>">
+                                    <%= enabled ? 'Disable' : 'Enable' %>
+                                </button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                <div class="flex-1 text-sm text-blue-800">
+                    <p class="font-semibold mb-1">About Blocklists:</p>
+                    <p>These lists contain known ad servers, tracking domains, and malware sites. Enabling multiple sources provides better protection but may increase memory usage.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Whitelist Management -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-check-circle text-gray-600 mr-2"></i>
+            Whitelist
+            <span class="text-sm text-gray-500 font-normal ml-2">(<%= whitelist.length %> domains)</span>
+        </h3>
+    </div>
+    <div class="card-body">
+        <p class="text-sm text-gray-600 mb-4">
+            Add domains to the whitelist to prevent them from being blocked, even if they appear in blocklists.
+        </p>
+        
+        <!-- Add to Whitelist Form -->
+        <form id="whitelistForm" class="mb-4">
+            <div class="flex gap-2">
+                <input 
+                    type="text" 
+                    name="domain" 
+                    id="whitelistDomain"
+                    placeholder="example.com"
+                    class="form-input flex-1"
+                    required
+                    pattern="[a-zA-Z0-9][a-zA-Z0-9\-\.]*[a-zA-Z0-9]">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus mr-1"></i>
+                    Add to Whitelist
+                </button>
+            </div>
+        </form>
+        
+        <!-- Whitelist Table -->
+        <% if (whitelist.length > 0) { %>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Domain</th>
+                            <th class="w-32">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="whitelistTable">
+                        <% whitelist.forEach((domain, index) => { %>
+                            <tr data-domain="<%= domain %>">
+                                <td class="text-gray-500"><%= index + 1 %></td>
+                                <td class="font-mono text-sm">
+                                    <i class="fas fa-globe text-blue-500 mr-2"></i>
+                                    <%= domain %>
+                                </td>
+                                <td>
+                                    <button 
+                                        onclick="removeFromWhitelist('<%= domain %>')" 
+                                        class="btn-sm btn-danger">
+                                        <i class="fas fa-trash mr-1"></i>
+                                        Remove
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-list-ul text-4xl mb-2"></i>
+                <p>No whitelisted domains</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-question-circle text-gray-600 mr-2"></i>
+            How DNS Adblock Works
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="space-y-4">
+            <div class="flex items-start">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                    <span class="text-blue-600 font-bold">1</span>
+                </div>
+                <div>
+                    <h5 class="font-semibold text-gray-800 mb-1">Download Blocklists</h5>
+                    <p class="text-sm text-gray-600">Regularly updated lists of known ad servers, trackers, and malicious domains from trusted sources.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                    <span class="text-blue-600 font-bold">2</span>
+                </div>
+                <div>
+                    <h5 class="font-semibold text-gray-800 mb-1">DNS Level Blocking</h5>
+                    <p class="text-sm text-gray-600">Blocked domains return NXDOMAIN (non-existent domain), preventing connections before they start.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                    <span class="text-blue-600 font-bold">3</span>
+                </div>
+                <div>
+                    <h5 class="font-semibold text-gray-800 mb-1">Network-Wide Protection</h5>
+                    <p class="text-sm text-gray-600">All devices using this DNS server benefit from adblocking automatically, without installing software.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                    <span class="text-blue-600 font-bold">4</span>
+                </div>
+                <div>
+                    <h5 class="font-semibold text-gray-800 mb-1">Whitelist Control</h5>
+                    <p class="text-sm text-gray-600">Easily allow specific domains if they're incorrectly blocked or needed for functionality.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle adblock on/off
+document.getElementById('adblockToggle').addEventListener('change', async function(e) {
+    const enabled = e.target.checked;
+    const toggle = this;
+    
+    try {
+        toggle.disabled = true;
+        
+        const response = await fetch('/adblock/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `enabled=${enabled}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('Error toggling adblock:', error);
+        showNotification('Failed to toggle adblock: ' + error.message, 'error');
+        toggle.checked = !enabled; // Revert
+    } finally {
+        toggle.disabled = false;
+    }
+});
+
+// Update blocklists
+async function updateBlocklists() {
+    const btn = document.getElementById('updateBtn');
+    const originalHTML = btn.innerHTML;
+    
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
+        
+        const response = await fetch('/adblock/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const result = data.result;
+            showNotification(
+                `Updated ${result.success.length} lists successfully (${result.totalDomains.toLocaleString()} domains)`,
+                'success'
+            );
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error('Error updating blocklists:', error);
+        showNotification('Failed to update blocklists: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+// Add to whitelist
+document.getElementById('whitelistForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const domain = document.getElementById('whitelistDomain').value.trim().toLowerCase();
+    
+    if (!domain) return;
+    
+    try {
+        const response = await fetch('/adblock/whitelist/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `domain=${encodeURIComponent(domain)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Added ${domain} to whitelist`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('Error adding to whitelist:', error);
+        showNotification('Failed to add to whitelist: ' + error.message, 'error');
+    }
+});
+
+// Remove from whitelist
+async function removeFromWhitelist(domain) {
+    if (!confirm(`Remove ${domain} from whitelist?`)) return;
+    
+    try {
+        const response = await fetch('/adblock/whitelist/remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `domain=${encodeURIComponent(domain)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Removed ${domain} from whitelist`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('Error removing from whitelist:', error);
+        showNotification('Failed to remove from whitelist: ' + error.message, 'error');
+    }
+}
+
+// Notification helper
+function showNotification(message, type = 'info') {
+    const colors = {
+        success: 'bg-green-100 border-green-400 text-green-700',
+        error: 'bg-red-100 border-red-400 text-red-700',
+        info: 'bg-blue-100 border-blue-400 text-blue-700'
+    };
+    
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 ${colors[type]} border px-4 py-3 rounded shadow-lg z-50 max-w-md`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.remove(), 5000);
+}
+</script>
+
+<%- include('../partials/footer') %>

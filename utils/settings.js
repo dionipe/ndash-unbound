@@ -59,6 +59,19 @@ const DEFAULT_SETTINGS = {
             logQueries: false,
             logReplies: false
         }
+    },
+    adblock: {
+        enabled: false,
+        sources: {
+            stevenblack: true,
+            adguard: true,
+            malware: true,
+            easylist: false,
+            tracking: false
+        },
+        autoUpdate: true,
+        updateInterval: 24, // hours
+        whitelist: []
     }
 };
 

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+<h1>Adblock Test</h1>
+<p>Enabled: <%= stats.enabled %></p>
+<p>Blocked: <%= stats.blockedDomains %></p>
+<p>Whitelist: <%= whitelist.length %></p>
+
+<h2>Sources:</h2>
+<% Object.keys(sources).forEach(key => { 
+    const source = sources[key];
+    const enabled = settings.sources && settings.sources[key];
+%>
+<p><%= key %>: <%= source.name %> - <%= enabled ? 'Yes' : 'No' %></p>
+<% }); %>
+
+</body>
+</html>

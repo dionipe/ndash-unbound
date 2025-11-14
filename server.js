@@ -33,6 +33,7 @@ const settingsRoutes = require('./routes/settings');
 const monitoringRoutes = require('./routes/monitoring');
 const statisticsRoutes = require('./routes/statistics');
 const activityRoutes = require('./routes/activity');
+const adblockRoutes = require('./routes/adblock');
 
 app.use('/', dashboardRoutes);
 app.use('/zones', zonesRoutes);
@@ -41,6 +42,7 @@ app.use('/settings', settingsRoutes);
 app.use('/monitoring', monitoringRoutes);
 app.use('/statistics', statisticsRoutes);
 app.use('/activity', activityRoutes);
+app.use('/adblock', adblockRoutes);
 
 // Initialize Unbound service and start server
 async function startServer() {
