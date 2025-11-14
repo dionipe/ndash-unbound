@@ -89,5 +89,18 @@
       "logQueries": false,
       "logReplies": false
     }
+  },
+  "adblock": {
+    "enabled": true,
+    "sources": {
+      "stevenblack": true,
+      "adguard": true,
+      "malware": true,
+      "easylist": false,
+      "tracking": false
+    },
+    "autoUpdate": true,
+    "updateInterval": 24,
+    "whitelist": []
   }
 }
