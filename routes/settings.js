@@ -137,6 +137,23 @@ router.get('/resolver/status', async (req, res) => {
 router.post('/resolver', async (req, res) => {
     try {
         const currentSettings = await settingsUtil.loadSettings();
+        const defaultResolver = settingsUtil.DEFAULT_SETTINGS.resolver;
+        
+        // Ensure resolver settings exist
+        if (!currentSettings.resolver) {
+            currentSettings.resolver = defaultResolver;
+        }
+        
+        // Ensure upstreamDNS exists
+        if (!currentSettings.resolver.upstreamDNS) {
+            currentSettings.resolver.upstreamDNS = defaultResolver.upstreamDNS;
+        }
+        
+        // Ensure access.allowedNetworks exists
+        if (!currentSettings.resolver.access || !currentSettings.resolver.access.allowedNetworks) {
+            currentSettings.resolver.access = currentSettings.resolver.access || {};
+            currentSettings.resolver.access.allowedNetworks = defaultResolver.access.allowedNetworks;
+        }
         
         // Parse form data
         const resolver = {

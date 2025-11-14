@@ -328,7 +328,7 @@
                 </div>
                 
                 <div class="pt-4 space-y-2">
-                    <button type="submit" class="btn btn-primary w-full">
+                    <button type="submit" id="apply-resolver-btn" class="btn btn-primary w-full">
                         <i class="fas fa-save mr-2"></i>
                         Apply Resolver Settings
                     </button>
@@ -448,15 +448,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add form submit handler to show loading state
-    const form = document.querySelector('form');
-    const saveBtn = document.getElementById('save-settings-btn');
-    
-    if (form && saveBtn) {
-        form.addEventListener('submit', function(e) {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-        });
-    }
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            form.addEventListener('submit', function(e) {
+                submitBtn.disabled = true;
+                const originalHTML = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+                
+                // Re-enable button after 10 seconds as fallback
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }, 10000);
+            });
+        }
+    });
     
     // Show current settings state in console
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
