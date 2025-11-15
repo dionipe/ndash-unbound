@@ -13,17 +13,82 @@ const WHITELIST_FILE = path.join(__dirname, '../data/adblock-whitelist.json');
 
 // Popular blocklist sources
 const BLOCKLIST_SOURCES = {
+    // Hagezi Multi Series - Comprehensive blocklists
+    hagezi_light: {
+        name: 'Hagezi Multi Light',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/light.txt',
+        description: 'Light protection - Basic ads, tracking, and malware blocking',
+        enabled: false
+    },
+    hagezi_normal: {
+        name: 'Hagezi Multi Normal',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/normal.txt',
+        description: 'All-round protection - Ads, affiliate, tracking, phishing, malware',
+        enabled: false
+    },
+    hagezi_pro: {
+        name: 'Hagezi Multi Pro (Recommended)',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/pro.txt',
+        description: 'Extended protection - Comprehensive blocking with balanced approach',
+        enabled: true
+    },
+    hagezi_pro_plus: {
+        name: 'Hagezi Multi Pro++',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/pro.plus.txt',
+        description: 'Maximum protection - Aggressive blocking with some restrictions',
+        enabled: false
+    },
+    hagezi_ultimate: {
+        name: 'Hagezi Multi Ultimate',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/ultimate.txt',
+        description: 'Aggressive protection - Strict blocking for maximum privacy',
+        enabled: false
+    },
+    
+    // Hagezi Specialized Blocklists
+    hagezi_tif: {
+        name: 'Hagezi Threat Intelligence Feeds',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/tif.txt',
+        description: 'Malware, cryptojacking, scam, spam, and phishing protection',
+        enabled: false
+    },
+    hagezi_fake: {
+        name: 'Hagezi Fake/Scam',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/fake.txt',
+        description: 'Block fake stores, streaming rip-offs, and scam sites',
+        enabled: false
+    },
+    hagezi_popup: {
+        name: 'Hagezi Pop-up Ads',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/popup.txt',
+        description: 'Block annoying and malicious pop-up advertisements',
+        enabled: false
+    },
+    hagezi_doh_bypass: {
+        name: 'Hagezi DoH/VPN Bypass',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/doh.txt',
+        description: 'Prevent DNS over HTTPS and VPN bypass attempts',
+        enabled: false
+    },
+    hagezi_tlds: {
+        name: 'Hagezi Most Abused TLDs',
+        url: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/tlds.txt',
+        description: 'Block domains from most abused top-level domains',
+        enabled: false
+    },
+    
+    // Legacy blocklists (keeping for compatibility)
     stevenblack: {
         name: 'Steven Black Hosts',
         url: 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',
         description: 'Unified hosts file with adware + malware',
-        enabled: true
+        enabled: false
     },
     adguard: {
         name: 'AdGuard DNS Filter',
         url: 'https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt',
         description: 'AdGuard DNS filter for blocking ads',
-        enabled: true
+        enabled: false
     },
     easylist: {
         name: 'EasyList',
@@ -35,7 +100,7 @@ const BLOCKLIST_SOURCES = {
         name: 'Malware Domain List',
         url: 'https://www.malwaredomainlist.com/hostslist/hosts.txt',
         description: 'Block known malware domains',
-        enabled: true
+        enabled: false
     },
     tracking: {
         name: 'EasyPrivacy',
@@ -93,9 +158,14 @@ async function downloadBlocklist(url, filename) {
         
         // Handle remote URLs
         const protocol = url.startsWith('https') ? https : http;
+        const options = {
+            headers: {
+                'User-Agent': 'NDash-Adblock/1.0 (https://github.com/dionipe/ndash-unbound)'
+            }
+        };
         const file = fs.createWriteStream(filepath);
         
-        protocol.get(url, (response) => {
+        protocol.get(url, options, (response) => {
             if (response.statusCode !== 200) {
                 reject(new Error(`Failed to download: HTTP ${response.statusCode}`));
                 return;
@@ -200,6 +270,47 @@ function parseAdBlockFormat(content) {
 }
 
 /**
+ * Parse RPZ (Response Policy Zone) format
+ */
+function parseRPZFormat(content) {
+    const domains = new Set();
+    const lines = content.split('\n');
+    
+    for (const line of lines) {
+        const trimmed = line.trim();
+        
+        // Skip comments, empty lines, and SOA/NS records
+        if (!trimmed || trimmed.startsWith(';') || trimmed.includes('SOA') || trimmed.includes('NS')) {
+            continue;
+        }
+        
+        // RPZ format: domain CNAME . or domain A 0.0.0.0
+        // Extract domain from lines like: *.domain.com CNAME .
+        const parts = trimmed.split(/\s+/);
+        if (parts.length >= 3) {
+            let domain = parts[0].toLowerCase();
+            
+            // Remove wildcard prefix if present
+            if (domain.startsWith('*.')) {
+                domain = domain.substring(2);
+            }
+            
+            // Remove trailing dot
+            if (domain.endsWith('.')) {
+                domain = domain.slice(0, -1);
+            }
+            
+            // Basic domain validation
+            if (/^[a-z0-9][a-z0-9\-\.]*[a-z0-9]$/i.test(domain)) {
+                domains.add(domain);
+            }
+        }
+    }
+    
+    return Array.from(domains);
+}
+
+/**
  * Load whitelist from disk
  */
 async function loadWhitelist() {
@@ -274,8 +385,11 @@ async function updateBlocklists(sources = null) {
             // Detect format and parse accordingly
             if (content.includes('0.0.0.0') || content.includes('127.0.0.1')) {
                 domains = parseHostsFile(content);
+            } else if (content.includes('CNAME') || content.includes('SOA') || source.url.includes('.rpz')) {
+                domains = parseRPZFormat(content);
             } else {
-                domains = parseAdBlockFormat(content);
+                // Assume it's a simple domain list (one domain per line)
+                domains = parseDomainList(content);
             }
             
             results.success.push({

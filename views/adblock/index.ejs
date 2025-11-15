@@ -50,37 +50,39 @@
 </div>
 
 <!-- Blocklist Sources -->
-<div class="card mb-6">
-    <div class="card-header">
-        <div class="flex items-center justify-between">
-            <h3 class="card-title">
-                <i class="fas fa-list text-gray-600 mr-2"></i>
-                Blocklist Sources
-            </h3>
-            <button onclick="updateBlocklists()" class="btn-sm btn-primary" id="updateBtn">
-                <i class="fas fa-sync-alt mr-1"></i>
-                Update Lists
-            </button>
+<div class="space-y-6">
+    <!-- Hagezi DNS Blocklists -->
+    <div class="card">
+        <div class="card-header">
+            <div class="flex items-center justify-between">
+                <h3 class="card-title">
+                    <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                    Hagezi DNS Blocklists (Recommended)
+                </h3>
+                <button onclick="updateBlocklists()" class="btn-sm btn-primary" id="updateBtn">
+                    <i class="fas fa-sync-alt mr-1"></i>
+                    Update Lists
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mt-2">
+                Comprehensive, regularly updated blocklists from <a href="https://github.com/hagezi/dns-blocklists" target="_blank" class="text-blue-600 hover:underline">hagezi/dns-blocklists</a>
+            </p>
         </div>
-    </div>
-    <div class="card-body">
-        <div class="overflow-x-auto">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th class="w-12">Status</th>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th class="w-32">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% Object.keys(sources).forEach(key => { 
-                        const source = sources[key];
-                        const enabled = settings.sources && settings.sources[key];
-                    %>
-                        <tr>
-                            <td>
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <% 
+                const hageziSources = Object.keys(sources).filter(key => key.startsWith('hagezi_'));
+                hageziSources.forEach(key => { 
+                    const source = sources[key];
+                    const enabled = settings.sources && settings.sources[key];
+                %>
+                    <div class="border border-gray-200 rounded-lg p-4 <%= enabled ? 'bg-green-50 border-green-200' : 'bg-gray-50' %>">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800"><%= source.name %></h4>
+                                <p class="text-sm text-gray-600 mt-1"><%= source.description %></p>
+                            </div>
+                            <div class="ml-3">
                                 <% if (enabled) { %>
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-check-circle mr-1"></i> Active
@@ -90,29 +92,94 @@
                                         <i class="fas fa-circle mr-1"></i> Inactive
                                     </span>
                                 <% } %>
-                            </td>
-                            <td class="font-medium"><%= source.name %></td>
-                            <td class="text-sm text-gray-600"><%= source.description %></td>
-                            <td>
-                                <button 
-                                    onclick="toggleSource('<%= key %>')" 
-                                    class="btn-sm <%= enabled ? 'btn-danger' : 'btn-secondary' %>"
-                                    data-source="<%= key %>">
-                                    <%= enabled ? 'Disable' : 'Enable' %>
-                                </button>
-                            </td>
-                        </tr>
-                    <% }); %>
-                </tbody>
-            </table>
+                            </div>
+                        </div>
+                        <button 
+                            onclick="toggleSource('<%= key %>')" 
+                            class="btn-sm w-full <%= enabled ? 'btn-danger' : 'btn-secondary' %>"
+                            data-source="<%= key %>">
+                            <%= enabled ? 'Disable' : 'Enable' %>
+                        </button>
+                    </div>
+                <% }); %>
+            </div>
+            
+            <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-lightbulb text-green-500 mt-1 mr-3"></i>
+                    <div class="flex-1 text-sm text-green-800">
+                        <p class="font-semibold mb-1">Recommended Setup:</p>
+                        <p>Start with <strong>Hagezi Multi Pro</strong> for balanced protection. Add <strong>Hagezi Threat Intelligence Feeds</strong> for enhanced security.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div class="flex items-start">
-                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
-                <div class="flex-1 text-sm text-blue-800">
-                    <p class="font-semibold mb-1">About Blocklists:</p>
-                    <p>These lists contain known ad servers, tracking domains, and malware sites. Enabling multiple sources provides better protection but may increase memory usage.</p>
+    </div>
+
+    <!-- Legacy Blocklists -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-list text-gray-600 mr-2"></i>
+                Legacy Blocklists
+            </h3>
+            <p class="text-sm text-gray-600 mt-2">
+                Traditional blocklists (kept for compatibility)
+            </p>
+        </div>
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="w-12">Status</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th class="w-32">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% 
+                        const legacySources = Object.keys(sources).filter(key => !key.startsWith('hagezi_'));
+                        legacySources.forEach(key => { 
+                            const source = sources[key];
+                            const enabled = settings.sources && settings.sources[key];
+                        %>
+                            <tr>
+                                <td>
+                                    <% if (enabled) { %>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i> Active
+                                        </span>
+                                    <% } else { %>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                            <i class="fas fa-circle mr-1"></i> Inactive
+                                        </span>
+                                    <% } %>
+                                </td>
+                                <td class="font-medium"><%= source.name %></td>
+                                <td class="text-sm text-gray-600"><%= source.description %></td>
+                                <td>
+                                    <button 
+                                        onclick="toggleSource('<%= key %>')" 
+                                        class="btn-sm <%= enabled ? 'btn-danger' : 'btn-secondary' %>"
+                                        data-source="<%= key %>">
+                                        <%= enabled ? 'Disable' : 'Enable' %>
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                    <div class="flex-1 text-sm text-blue-800">
+                        <p class="font-semibold mb-1">About Blocklists:</p>
+                        <p>These lists contain known ad servers, tracking domains, and malware sites. The Hagezi lists above are more comprehensive and regularly updated.</p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -204,19 +204,31 @@ router.post('/source/toggle/:sourceKey', async (req, res) => {
     try {
         const { sourceKey } = req.params;
         const settings = await loadSettings();
+        const adblockUtil = require('../utils/adblock');
         
         // Initialize adblock settings if not exists
         if (!settings.adblock) {
-            settings.adblock = DEFAULT_SETTINGS.adblock;
+            settings.adblock = {
+                enabled: false,
+                sources: {},
+                autoUpdate: true,
+                updateInterval: 24
+            };
         }
         
         // Initialize sources if not exists
         if (!settings.adblock.sources) {
-            settings.adblock.sources = DEFAULT_SETTINGS.adblock.sources;
+            settings.adblock.sources = {};
         }
         
-        // Toggle the source
-        if (settings.adblock.sources[sourceKey] !== undefined) {
+        // Check if source exists in BLOCKLIST_SOURCES
+        if (adblockUtil.BLOCKLIST_SOURCES[sourceKey]) {
+            // Initialize with default enabled state if not set
+            if (settings.adblock.sources[sourceKey] === undefined) {
+                settings.adblock.sources[sourceKey] = adblockUtil.BLOCKLIST_SOURCES[sourceKey].enabled;
+            }
+            
+            // Toggle the source
             settings.adblock.sources[sourceKey] = !settings.adblock.sources[sourceKey];
             
             // Save settings
@@ -224,13 +236,13 @@ router.post('/source/toggle/:sourceKey', async (req, res) => {
             
             // Regenerate adblock config if adblock is enabled
             if (settings.adblock.enabled) {
-                await adblock.applyAdblockConfig();
+                await adblockUtil.applyAdblockConfig();
             }
             
             res.json({
                 success: true,
                 enabled: settings.adblock.sources[sourceKey],
-                message: `${sourceKey} ${settings.adblock.sources[sourceKey] ? 'enabled' : 'disabled'}`
+                message: `${adblockUtil.BLOCKLIST_SOURCES[sourceKey].name} ${settings.adblock.sources[sourceKey] ? 'enabled' : 'disabled'}`
             });
         } else {
             res.status(400).json({

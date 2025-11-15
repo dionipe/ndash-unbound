@@ -19,6 +19,47 @@
     </div>
 <% } %>
 
+<!-- Quick Status Overview -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-server text-blue-600 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <h4 class="text-sm font-medium text-gray-900">Unbound Status</h4>
+                <p class="text-sm text-gray-500" id="status-indicator">Loading...</p>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-network-wired text-green-600 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <h4 class="text-sm font-medium text-gray-900">Resolver</h4>
+                <p class="text-sm text-gray-500" id="resolver-indicator">
+                    <%= settings.resolver && settings.resolver.enabled ? 'Enabled' : 'Disabled' %>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-shield-alt text-yellow-600 text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <h4 class="text-sm font-medium text-gray-900">DoT/DoH</h4>
+                <p class="text-sm text-gray-500" id="tls-indicator">
+                    <%= (settings.unbound && settings.unbound.dotEnabled) || (settings.unbound && settings.unbound.dohEnabled) ? 'Enabled' : 'Disabled' %>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
     <!-- Unbound Configuration -->
     <div class="xl:col-span-2 space-y-4 lg:space-y-6">
@@ -103,6 +144,7 @@
                 <i class="fas fa-cogs mr-2 text-indigo-600"></i>
                 Zone Management Settings
             </h4>
+            <p class="text-sm text-gray-600 mb-4">Configure how NDash handles DNS zone operations</p>
             
             <form method="POST" action="/settings" class="space-y-4">
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
@@ -164,6 +206,7 @@
                 <i class="fas fa-network-wired mr-2 text-green-600"></i>
                 DNS Resolver Settings
             </h4>
+            <p class="text-sm text-gray-600 mb-4">Configure Unbound DNS resolver behavior and performance</p>
             
             <form method="POST" action="/settings/resolver">
                 <!-- Enable Resolver -->
@@ -180,7 +223,7 @@
                     </div>
                 </div>
 
-                <div id="resolver-options" style="display: <%= settings.resolver && settings.resolver.enabled ? 'block' : 'none' %>">
+                <div id="resolver-options" class="<%= settings.resolver && settings.resolver.enabled ? '' : 'hidden' %>">
                     <!-- Forwarding -->
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-2">
@@ -287,7 +330,7 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Encrypted DNS Protocols</label>
                         <div class="space-y-2">
-                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded" id="dot-setting">
                                 <div class="flex items-center space-x-2">
                                     <i class="fas fa-lock text-blue-600"></i>
                                     <div>
@@ -297,7 +340,7 @@
                                 </div>
                                 <input type="checkbox" name="dotEnabled" <%= settings.unbound && settings.unbound.dotEnabled ? 'checked' : '' %>>
                             </div>
-                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded" id="doh-setting">
                                 <div class="flex items-center space-x-2">
                                     <i class="fas fa-shield-alt text-green-600"></i>
                                     <div>
@@ -306,6 +349,17 @@
                                     </div>
                                 </div>
                                 <input type="checkbox" name="dohEnabled" <%= settings.unbound && settings.unbound.dohEnabled ? 'checked' : '' %>>
+                            </div>
+                        </div>
+                        <div id="tls-notice" class="hidden mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-0.5 mr-2"></i>
+                                <div class="flex-1">
+                                    <h5 class="text-sm font-medium text-yellow-800">TLS Server Not Supported</h5>
+                                    <p class="text-xs text-yellow-700 mt-1">
+                                        Unbound must be compiled with <code class="bg-yellow-200 px-1 rounded">--enable-tls-server</code> flag to support DoT/DoH.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         <p class="text-xs text-gray-500 mt-2">
@@ -372,34 +426,63 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="space-y-6">
-        <!-- Resolver Status -->
+    <!-- SSL Certificate Management -->
+    <div class="xl:col-span-1 space-y-4 lg:space-y-6">
         <div class="content-card">
             <h4 class="text-lg font-semibold text-gray-800 mb-4">
-                <i class="fas fa-globe mr-2 text-green-600"></i>
-                Resolver Status
+                <i class="fas fa-certificate mr-2 text-green-600"></i>
+                SSL Certificates (DoT/DoH)
             </h4>
-            
-            <div id="resolver-status" class="space-y-3">
+            <p class="text-sm text-gray-600 mb-4">Manage SSL certificates for encrypted DNS protocols</p>
+
+            <div id="ssl-cert-info" class="space-y-3">
                 <div class="text-center py-4">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                    <p class="text-sm text-gray-600 mt-2">Loading status...</p>
+                    <i class="fas fa-spinner fa-spin text-blue-600 text-2xl mb-2"></i>
+                    <p class="text-sm text-gray-600">Loading certificate info...</p>
                 </div>
+            </div>
+
+            <div class="mt-4 space-y-2">
+                <button onclick="loadSSLCertInfo()" class="btn-sm btn-primary w-full">
+                    <i class="fas fa-sync-alt mr-1"></i>
+                    Refresh Info
+                </button>
+                <button onclick="regenerateSSLCert()" class="btn-sm btn-secondary w-full">
+                    <i class="fas fa-redo mr-1"></i>
+                    Regenerate Certificates
+                </button>
             </div>
         </div>
 
-        <!-- Unbound Status -->
-        <div class="content-card">
-            <h4 class="text-lg font-semibold text-gray-800 mb-4">
-                <i class="fas fa-heartbeat mr-2 text-red-600"></i>
-                Unbound Status
-            </h4>
-            
-            <div id="unbound-status" class="space-y-3">
-                <div class="text-center py-4">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p class="text-sm text-gray-600 mt-2">Loading status...</p>
+        <!-- Status Overview Grid -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Resolver Status -->
+            <div class="content-card">
+                <h4 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-globe mr-2 text-green-600 text-sm"></i>
+                    Resolver
+                </h4>
+                
+                <div id="resolver-status" class="space-y-2">
+                    <div class="text-center py-2">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+                        <p class="text-xs text-gray-600 mt-1">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unbound Status -->
+            <div class="content-card">
+                <h4 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-heartbeat mr-2 text-red-600 text-sm"></i>
+                    Unbound
+                </h4>
+                
+                <div id="unbound-status" class="space-y-2">
+                    <div class="text-center py-2">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p class="text-xs text-gray-600 mt-1">Loading...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -411,25 +494,25 @@
                 Quick Actions
             </h4>
             
-            <div class="space-y-2">
-                <button onclick="reloadUnbound()" class="btn btn-primary w-full">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    Reload Unbound
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="reloadUnbound()" class="btn-sm btn-primary">
+                    <i class="fas fa-sync-alt mr-1"></i>
+                    Reload
                 </button>
                 
-                <button onclick="checkConfig()" class="btn w-full">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    Check Config
+                <button onclick="checkConfig()" class="btn-sm">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    Check
                 </button>
                 
-                <button onclick="viewLogs()" class="btn w-full">
-                    <i class="fas fa-file-alt mr-2"></i>
-                    View Logs
+                <button onclick="viewLogs()" class="btn-sm">
+                    <i class="fas fa-file-alt mr-1"></i>
+                    Logs
                 </button>
                 
-                <a href="/zones" class="btn w-full block text-center">
-                    <i class="fas fa-globe mr-2"></i>
-                    Manage Zones
+                <a href="/zones" class="btn-sm block text-center">
+                    <i class="fas fa-globe mr-1"></i>
+                    Zones
                 </a>
             </div>
         </div>
@@ -452,7 +535,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Repository</span>
-                    <a href="https://github.com/dionipe/ndash" target="_blank" class="text-blue-600 hover:underline">
+                    <a href="https://github.com/dionipe/ndash" target="_blank" class="text-blue-600 hover:underline text-sm">
                         <i class="fab fa-github mr-1"></i>GitHub
                     </a>
                 </div>
@@ -462,10 +545,49 @@
 </div>
 
 <script>
-// Load Unbound status on page load
+// Form validation
+function validateResolverForm() {
+    const numThreads = document.querySelector('input[name="numThreads"]');
+    const cacheMsg = document.querySelector('input[name="cacheSizeMsg"]');
+    const cacheRrset = document.querySelector('input[name="cacheSizeRrset"]');
+    const cacheMin = document.querySelector('input[name="cacheTTLMin"]');
+    const cacheMax = document.querySelector('input[name="cacheTTLMax"]');
+    const verbosity = document.querySelector('input[name="verbosity"]');
+    
+    // Validate number inputs
+    if (numThreads && (numThreads.value < 1 || numThreads.value > 8)) {
+        showNotification('Number of threads must be between 1 and 8', 'error');
+        return false;
+    }
+    
+    if (cacheMsg && (cacheMsg.value < 4 || cacheMsg.value > 256)) {
+        showNotification('Message cache size must be between 4 and 256 MB', 'error');
+        return false;
+    }
+    
+    if (cacheRrset && (cacheRrset.value < 4 || cacheRrset.value > 512)) {
+        showNotification('RRset cache size must be between 4 and 512 MB', 'error');
+        return false;
+    }
+    
+    if (cacheMin && cacheMax && parseInt(cacheMin.value) >= parseInt(cacheMax.value)) {
+        showNotification('Minimum cache TTL must be less than maximum', 'error');
+        return false;
+    }
+    
+    if (verbosity && (verbosity.value < 0 || verbosity.value > 5)) {
+        showNotification('Verbosity must be between 0 and 5', 'error');
+        return false;
+    }
+    
+    return true;
+}
+
+// Update form submit handlers with validation
 document.addEventListener('DOMContentLoaded', function() {
     loadUnboundStatus();
     loadResolverStatus();
+    checkTLSServerSupport();
     
     // Toggle resolver options visibility
     const resolverEnabledCheckbox = document.querySelector('input[name="resolverEnabled"]');
@@ -473,7 +595,23 @@ document.addEventListener('DOMContentLoaded', function() {
         resolverEnabledCheckbox.addEventListener('change', function() {
             const options = document.getElementById('resolver-options');
             if (options) {
-                options.style.display = this.checked ? 'block' : 'none';
+                if (this.checked) {
+                    options.classList.remove('hidden');
+                } else {
+                    options.classList.add('hidden');
+                }
+            }
+            updateResolverIndicator(this.checked);
+        });
+    }
+    
+    // Add form submit handler with validation
+    const resolverForm = document.querySelector('form[action="/settings/resolver"]');
+    if (resolverForm) {
+        resolverForm.addEventListener('submit', function(e) {
+            if (!validateResolverForm()) {
+                e.preventDefault();
+                return false;
             }
         });
     }
@@ -517,36 +655,29 @@ function loadResolverStatus() {
                 const statusIcon = status.running ? 'check-circle' : 'times-circle';
                 
                 let html = `
-                    <div class="text-center py-3 mb-3">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-${statusColor}-100 mb-2">
-                            <i class="fas fa-${statusIcon} text-3xl text-${statusColor}-600"></i>
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-${statusColor}-100 mb-1">
+                            <i class="fas fa-${statusIcon} text-lg text-${statusColor}-600"></i>
                         </div>
-                        <p class="text-lg font-semibold text-gray-800">
+                        <p class="text-xs font-semibold text-gray-800">
                             ${status.enabled ? (status.running ? 'Active' : 'Configured') : 'Disabled'}
                         </p>
-                        <p class="text-xs text-gray-600">${status.message}</p>
                     </div>
                 `;
                 
                 if (status.running && stats.queries !== undefined) {
                     const hitRate = stats.cacheHitRate || 0;
                     html += `
-                        <div class="space-y-2 pt-3 border-t">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">Total Queries</span>
-                                <span class="font-semibold">${stats.queries}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">Cache Hits</span>
-                                <span class="font-semibold text-green-600">${stats.cachehits}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">Cache Miss</span>
-                                <span class="font-semibold text-orange-600">${stats.cachemiss}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">Hit Rate</span>
-                                <span class="font-semibold text-blue-600">${hitRate}%</span>
+                        <div class="mt-2 pt-2 border-t border-gray-100">
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Queries</span>
+                                    <span class="font-semibold text-gray-700">${stats.queries}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Hit Rate</span>
+                                    <span class="font-semibold text-blue-600">${hitRate}%</span>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -555,9 +686,9 @@ function loadResolverStatus() {
                 statusDiv.innerHTML = html;
             } else {
                 statusDiv.innerHTML = `
-                    <div class="text-center py-3">
-                        <i class="fas fa-exclamation-triangle text-3xl text-yellow-600 mb-2"></i>
-                        <p class="text-sm text-gray-600">Failed to load status</p>
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-lg text-yellow-600 mb-1"></i>
+                        <p class="text-xs text-gray-600">Failed</p>
                     </div>
                 `;
             }
@@ -596,26 +727,39 @@ function loadUnboundStatus() {
         .then(response => response.json())
         .then(data => {
             const statusDiv = document.getElementById('unbound-status');
+            const statusIndicator = document.getElementById('status-indicator');
+            
             if (data.success) {
                 const statusColor = data.status === 'running' ? 'green' : 'red';
                 const statusIcon = data.status === 'running' ? 'check-circle' : 'times-circle';
                 
                 statusDiv.innerHTML = `
-                    <div class="text-center py-3">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-${statusColor}-100 mb-3">
-                            <i class="fas fa-${statusIcon} text-3xl text-${statusColor}-600"></i>
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-${statusColor}-100 mb-1">
+                            <i class="fas fa-${statusIcon} text-lg text-${statusColor}-600"></i>
                         </div>
-                        <p class="text-lg font-semibold text-gray-800 capitalize">${data.status}</p>
-                        <p class="text-xs text-gray-600 mt-1">${data.version}</p>
+                        <p class="text-xs font-semibold text-gray-800 capitalize">${data.status}</p>
+                        <p class="text-xs text-gray-500 mt-1">${data.version}</p>
                     </div>
                 `;
+                
+                // Update status indicator
+                if (statusIndicator) {
+                    statusIndicator.textContent = data.status === 'running' ? 'Running' : 'Stopped';
+                    statusIndicator.className = `text-sm ${data.status === 'running' ? 'text-green-600' : 'text-red-600'}`;
+                }
             } else {
                 statusDiv.innerHTML = `
-                    <div class="text-center py-3">
-                        <i class="fas fa-exclamation-triangle text-3xl text-yellow-600 mb-2"></i>
-                        <p class="text-sm text-gray-600">Failed to load status</p>
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-lg text-yellow-600 mb-1"></i>
+                        <p class="text-xs text-gray-600">Failed</p>
                     </div>
                 `;
+                
+                if (statusIndicator) {
+                    statusIndicator.textContent = 'Unknown';
+                    statusIndicator.className = 'text-sm text-gray-600';
+                }
             }
         })
         .catch(error => {
@@ -650,9 +794,221 @@ function checkConfig() {
     showNotification('Config check feature coming soon', 'info');
 }
 
-function viewLogs() {
-    showNotification('Logs viewer feature coming soon', 'info');
+function updateResolverIndicator(enabled) {
+    const indicator = document.getElementById('resolver-indicator');
+    if (indicator) {
+        indicator.textContent = enabled ? 'Enabled' : 'Disabled';
+        indicator.className = `text-sm ${enabled ? 'text-green-600' : 'text-red-600'}`;
+    }
 }
+
+function updateTLSIndicator(enabled) {
+    const indicator = document.getElementById('tls-indicator');
+    if (indicator) {
+        indicator.textContent = enabled ? 'Enabled' : 'Disabled';
+        indicator.className = `text-sm ${enabled ? 'text-green-600' : 'text-red-600'}`;
+    }
+}
+
+// Check TLS server support and update UI
+function checkTLSServerSupport() {
+    fetch('/settings/ssl-cert-info')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const cert = data.data;
+                
+                if (cert.tlsServerSupported === false) {
+                    // Disable DoT/DoH checkboxes
+                    const dotCheckbox = document.querySelector('input[name="dotEnabled"]');
+                    const dohCheckbox = document.querySelector('input[name="dohEnabled"]');
+                    
+                    if (dotCheckbox) {
+                        dotCheckbox.disabled = true;
+                        dotCheckbox.checked = false;
+                    }
+                    if (dohCheckbox) {
+                        dohCheckbox.disabled = true;
+                        dohCheckbox.checked = false;
+                    }
+                    
+                    // Show notice
+                    const noticeDiv = document.getElementById('tls-notice');
+                    if (noticeDiv) {
+                        noticeDiv.classList.remove('hidden');
+                    }
+                    
+                    // Add disabled styling
+                    const dotSetting = document.getElementById('dot-setting');
+                    const dohSetting = document.getElementById('doh-setting');
+                    
+                    if (dotSetting) dotSetting.classList.add('opacity-50');
+                    if (dohSetting) dohSetting.classList.add('opacity-50');
+                    
+                    // Update TLS indicator
+                    updateTLSIndicator(false);
+                } else {
+                    updateTLSIndicator(true);
+                }
+            }
+        })
+        .catch(error => {
+            console.warn('Failed to check TLS server support:', error);
+        });
+}
+
+// SSL Certificate Management
+function loadSSLCertInfo() {
+    const certInfoDiv = document.getElementById('ssl-cert-info');
+
+    certInfoDiv.innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin text-blue-600 text-2xl mb-2"></i>
+            <p class="text-sm text-gray-600">Loading certificate info...</p>
+        </div>
+    `;
+
+    fetch('/settings/ssl-cert-info')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const cert = data.data;
+                
+                // Check TLS server support first
+                if (cert.tlsServerSupported === false) {
+                    certInfoDiv.innerHTML = `
+                        <div class="space-y-3">
+                            <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-yellow-600 mt-0.5 mr-2"></i>
+                                    <div class="flex-1">
+                                        <h5 class="text-sm font-medium text-yellow-800">TLS Server Not Supported</h5>
+                                        <p class="text-xs text-yellow-700 mt-1">
+                                            Unbound was not compiled with TLS server support. DoT and DoH have been automatically disabled.
+                                        </p>
+                                        <div class="mt-2 p-2 bg-yellow-100 rounded text-xs">
+                                            <strong>To enable DoT/DoH:</strong><br>
+                                            Recompile Unbound with <code class="bg-yellow-200 px-1 rounded">--enable-tls-server</code> flag
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let statusColor = 'gray';
+                let statusIcon = 'fa-question-circle';
+                let statusText = 'Unknown';
+
+                if (!cert.exists) {
+                    statusColor = 'red';
+                    statusIcon = 'fa-times-circle';
+                    statusText = 'Not Found';
+                } else if (cert.isExpired) {
+                    statusColor = 'red';
+                    statusIcon = 'fa-exclamation-triangle';
+                    statusText = 'Expired';
+                } else if (cert.daysUntilExpiry < 30) {
+                    statusColor = 'yellow';
+                    statusIcon = 'fa-exclamation-triangle';
+                    statusText = 'Expires Soon';
+                } else {
+                    statusColor = 'green';
+                    statusIcon = 'fa-check-circle';
+                    statusText = 'Valid';
+                }
+
+                certInfoDiv.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-2 bg-${statusColor}-50 rounded">
+                            <span class="text-sm font-medium text-gray-700">Status</span>
+                            <span class="flex items-center text-sm">
+                                <i class="fas ${statusIcon} text-${statusColor}-600 mr-1"></i>
+                                ${statusText}
+                            </span>
+                        </div>
+
+                        ${cert.exists ? `
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Key File:</span>
+                                    <code class="bg-gray-100 px-1 rounded text-xs">${cert.keyFile}</code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Cert File:</span>
+                                    <code class="bg-gray-100 px-1 rounded text-xs">${cert.certFile}</code>
+                                </div>
+                                ${cert.expiryDate ? `
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Expires:</span>
+                                        <span class="text-${cert.daysUntilExpiry < 30 ? 'red' : 'gray'}-600">${cert.expiryDate.toLocaleDateString()}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Days Left:</span>
+                                        <span class="text-${cert.daysUntilExpiry < 30 ? 'red' : 'gray'}-600">${cert.daysUntilExpiry}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : `
+                            <div class="text-center py-2">
+                                <p class="text-sm text-gray-600">Certificates will be auto-generated when DoT/DoH is enabled</p>
+                            </div>
+                        `}
+                    </div>
+                `;
+            } else {
+                certInfoDiv.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl mb-2"></i>
+                        <p class="text-sm text-red-600">Failed to load certificate info</p>
+                        <p class="text-xs text-gray-600 mt-1">${data.error || 'Unknown error'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            certInfoDiv.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-2xl mb-2"></i>
+                    <p class="text-sm text-red-600">Failed to load certificate info</p>
+                    <p class="text-xs text-gray-600 mt-1">Network error</p>
+                </div>
+            `;
+        });
+}
+
+function regenerateSSLCert() {
+    if (!confirm('Are you sure you want to regenerate SSL certificates? This will create new certificates and may require clients to accept the new certificates.')) {
+        return;
+    }
+
+    showNotification('Regenerating SSL certificates...', 'info');
+
+    fetch('/settings/regenerate-ssl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(loadSSLCertInfo, 1000); // Reload info after 1 second
+        } else {
+            showNotification('Failed to regenerate certificates: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Failed to regenerate certificates', 'error');
+    });
+}
+
+// Load SSL cert info on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadSSLCertInfo();
+    checkTLSServerSupport();
+});
 
 function showNotification(message, type) {
     const colors = {

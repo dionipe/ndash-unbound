@@ -5,6 +5,7 @@ const path = require('path');
 const config = require('../config');
 const settingsUtil = require('../utils/settings');
 const resolverConfig = require('../utils/resolverConfig');
+const unboundService = require('../services/unboundService');
 
 // Get settings page
 router.get('/', async (req, res) => {
@@ -239,6 +240,32 @@ router.post('/resolver/apply', async (req, res) => {
         const settings = await settingsUtil.loadSettings();
         const result = await resolverConfig.applyResolverConfig(settings);
         
+        res.json(result);
+    } catch (error) {
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+// Get SSL certificate information
+router.get('/ssl-cert-info', async (req, res) => {
+    try {
+        const result = await unboundService.getSSLCertificateInfo();
+        res.json(result);
+    } catch (error) {
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+// Regenerate SSL certificates
+router.post('/regenerate-ssl', async (req, res) => {
+    try {
+        const result = await unboundService.regenerateSSLCertificates();
         res.json(result);
     } catch (error) {
         res.json({

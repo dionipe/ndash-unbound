@@ -12,9 +12,9 @@
     "localZonesPath": "/etc/unbound/local.d",
     "controlSocket": "/var/run/unbound.ctl",
     "logFile": "/var/log/unbound.log",
-    "dotEnabled": true,
+    "dotEnabled": false,
     "dotPort": 853,
-    "dohEnabled": true,
+    "dohEnabled": false,
     "dohPort": 443,
     "dohEndpoint": "/dns-query"
   },
@@ -104,7 +104,12 @@
       "easylist": true,
       "tracking": true,
       "geoghegan": true,
-      "komdigi": false
+      "komdigi": false,
+      "hagezi_pro": true,
+      "hagezi_pro_plus": true,
+      "hagezi_normal": true,
+      "hagezi_light": true,
+      "hagezi_popup": true
     },
     "autoUpdate": true,
     "updateInterval": 24,

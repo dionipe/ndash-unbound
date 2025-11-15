@@ -6,6 +6,7 @@ const execPromise = util.promisify(exec);
 const config = require('../config');
 const unboundUtil = require('../utils/unbound');
 const settingsUtil = require('../utils/settings');
+const sslCertificate = require('../utils/sslCertificate');
 const { activityLogger } = require('../utils/activityLogger');
 
 /**
@@ -28,6 +29,9 @@ class UnboundService {
             
             // Ensure main config includes the local zones directory
             await this.ensureIncludeDirective();
+            
+            // Ensure SSL certificates for DoT/DoH are available
+            await sslCertificate.ensureCertificates();
             
             return true;
         } catch (error) {
@@ -640,6 +644,42 @@ class UnboundService {
             return {
                 success: true,
                 data: stats
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Get SSL certificate information
+     */
+    async getSSLCertificateInfo() {
+        try {
+            const certInfo = await sslCertificate.getCertificateInfo();
+            return {
+                success: true,
+                data: certInfo
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Regenerate SSL certificates
+     */
+    async regenerateSSLCertificates() {
+        try {
+            await sslCertificate.generateCertificate();
+            return {
+                success: true,
+                message: 'SSL certificates regenerated successfully'
             };
         } catch (error) {
             return {
