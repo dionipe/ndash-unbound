@@ -113,6 +113,18 @@ const BLOCKLIST_SOURCES = {
         url: 'https://www.stopforumspam.com/downloads/toxic_domains_whole.txt',
         description: 'Block toxic domains from StopForumSpam',
         enabled: false
+    },
+    abpindo: {
+        name: 'ABPindo',
+        url: 'https://raw.githubusercontent.com/ABPindo/indonesianadblockrules/master/subscriptions/unbound.txt',
+        description: 'Indonesian and Malaysian ad blocking rules',
+        enabled: false
+    },
+    abpindo_adult: {
+        name: 'ABPindo Adult',
+        url: 'https://raw.githubusercontent.com/ABPindo/indonesianadblockrules/master/subscriptions/unbound_adult.txt',
+        description: 'ABPindo with adult content blocking',
+        enabled: false
     }
 };
 
@@ -311,6 +323,34 @@ function parseRPZFormat(content) {
 }
 
 /**
+ * Parse Unbound local-zone format
+ */
+function parseUnboundFormat(content) {
+    const domains = new Set();
+    const lines = content.split('\n');
+    
+    for (const line of lines) {
+        const trimmed = line.trim();
+        
+        // Skip comments and empty lines
+        if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith(';')) {
+            continue;
+        }
+        
+        // Parse Unbound format: local-zone: "domain.com" always_nxdomain
+        const match = trimmed.match(/local-zone:\s*["']?([a-z0-9][a-z0-9\-\.]*[a-z0-9])["']?\s+always_nxdomain/i);
+        if (match) {
+            const domain = match[1].toLowerCase();
+            if (domain) {
+                domains.add(domain);
+            }
+        }
+    }
+    
+    return Array.from(domains);
+}
+
+/**
  * Load whitelist from disk
  */
 async function loadWhitelist() {
@@ -385,6 +425,8 @@ async function updateBlocklists(sources = null) {
             // Detect format and parse accordingly
             if (content.includes('0.0.0.0') || content.includes('127.0.0.1')) {
                 domains = parseHostsFile(content);
+            } else if (content.includes('local-zone:')) {
+                domains = parseUnboundFormat(content);
             } else if (content.includes('CNAME') || content.includes('SOA') || source.url.includes('.rpz')) {
                 domains = parseRPZFormat(content);
             } else {

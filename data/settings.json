@@ -106,10 +106,13 @@
       "geoghegan": true,
       "komdigi": false,
       "hagezi_pro": true,
-      "hagezi_pro_plus": true,
+      "hagezi_pro_plus": false,
       "hagezi_normal": true,
       "hagezi_light": true,
-      "hagezi_popup": true
+      "hagezi_popup": true,
+      "hagezi_doh_bypass": true,
+      "abpindo": true,
+      "abpindo_adult": true
     },
     "autoUpdate": true,
     "updateInterval": 24,
